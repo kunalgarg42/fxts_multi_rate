@@ -370,7 +370,7 @@ namespace ControlBarrierFunction
 		}
 		if (V_alpha[0]<10000.0){
 			if (new_form>0){
-				ub_x_[0] = -35*pow(V[0],0.8)-35*pow(V[0],1.2) - temp1;
+				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
 			}
 			else
 			{
@@ -407,7 +407,7 @@ namespace ControlBarrierFunction
 		}
 		//- h_alpha[0] *h[0]
 		if(new_form>0){
-			Fx_[2*nu_] = 0;
+			Fx_[2*nu_] = V[0];
 			// Fx_[2*nu_+1] = -h[0];
 		}else{
 			Fx_[2*nu_] = -1;
