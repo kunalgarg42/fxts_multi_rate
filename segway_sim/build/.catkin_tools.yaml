@@ -1,0 +1,6 @@
+devel_space: /home/kunal/catkin_ws/src/segway_sim/devel
+install: false
+install_space: /home/kunal/catkin_ws/src/segway_sim/install
+profile: default
+source_space: /home/kunal/catkin_ws/src/segway_sim/src
+workspace: /home/kunal/catkin_ws/src/segway_sim

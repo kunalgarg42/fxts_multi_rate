@@ -1,0 +1,8 @@
+prefix=/home/kunal/catkin_ws/src/segway_sim/build/devel
+
+Name: segway_sim
+Description: Description of segway_sim
+Version: 0.1.0
+Cflags: -I/home/kunal/catkin_ws/src/segway_sim/build/devel/include -I/home/kunal/catkin_ws/src/segway_sim/include
+Libs: -L${prefix}/lib -lsegway_sim
+Requires: roscpp message_generation std_msgs sensor_msgs geometry_msgs visualization_msgs nav_msgs tf pcl_conversions pcl_ros ambercortex_ros

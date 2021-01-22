@@ -1,0 +1,8 @@
+prefix=/home/kunal/catkin_ws/src/multirate-mpc-cbf/devel
+
+Name: ambercortex_ros
+Description: Description of ambercortex_ros
+Version: 0.0.0
+Cflags: -I/home/kunal/catkin_ws/src/multirate-mpc-cbf/devel/include
+Libs: -L${prefix}/lib 
+Requires: 

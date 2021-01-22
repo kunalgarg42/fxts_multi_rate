@@ -1,0 +1,6 @@
+rm -rf build
+mkdir build
+cd build
+cmake .. -DOSQP_EMBEDDED=ON
+sudo make install
+cd ..

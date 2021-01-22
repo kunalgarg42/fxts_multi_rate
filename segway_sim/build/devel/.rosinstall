@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/kunal/catkin_ws/src/segway_sim/build/devel/setup.sh
