@@ -41,7 +41,7 @@ namespace ControlBarrierFunction
 		void setIC(double X_in[], double Xn_in[], double X_MPC[]);
 		void setMatrices(double A_in[], double B_in[], double C_in[]);
 		int32_t setUpOSQP(int verbose);
-		void solveQP(int printLevel, int constraint_type);
+		void solveQP(int printLevel);
 		double sigma(double dt_frac);
 		double dsdt(double dt_frac);
 
@@ -258,7 +258,7 @@ namespace ControlBarrierFunction
 		return osqp_setup(&work_, data_, settings_);
 	}
 
-	void CBF::solveQP(int printLevel, int constraint_type)
+	void CBF::solveQP(int printLevel)
 	{
 		// Update constraints
 		data_->l = lb_x_;
@@ -402,73 +402,52 @@ namespace ControlBarrierFunction
 		}
 
 		// Pick constraint in launch file with: low_level_constraint argument
+		
 		lb_x_[0] = -OSQP_INFTY;
 		ub_x_[1] = OSQP_INFTY;
-		switch (constraint_type){
-			case 1 : 
-				// Kunal's Slackened Formulation
-				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
-				lb_x_[1] = -OSQP_INFTY; 
-				Fx_[2*nu_] = V[0];		
-				break; 
-			case 2 : 
-				// Kunal's Unslackened Formulation
-				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
-				lb_x_[1] = -OSQP_INFTY; 
-				Fx_[2*nu_] = 0; 		
-				break; 
-			case 3 : 
-				// No Low Level Constraint
-				ub_x_[0] = OSQP_INFTY; 
-				lb_x_[1] = -OSQP_INFTY;
-				Fx_[2*nu_] = 0;
-				break; 			
-			case 4 : 
-				// Enforce Convergence to shrunken Safe Set
-				{
-				ub_x_[0] = OSQP_INFTY; 
-				double h_shrunk = h[0] - 0.999;
-				lb_x_[1] = - h_alpha[0]*2*h_shrunk/abs(h_shrunk)*pow(abs(h_shrunk), 1-rho) - temp2;
-				Fx_[2*nu_] = 0;
-				break; 
-				}
-			case 5 : 
-				// Enforce Convergence to Lyapunov Level Set
-				{
-				double C = 0.1;
-				ub_x_[0] = 20*(C-V[0])/abs(C - V[0])*pow(abs(C-V[0]), 1- rho) - temp1;
-				lb_x_[1] = -OSQP_INFTY;
-				Fx_[2*nu_] = 0;
-				break; 
-				}			
-			case 6 :
-				// Safe Exponential Decay to Lyapunov Level Set 
-				{
-				double C = 0.01;
-				double k = 10; 
-				ub_x_[0] = h_alpha[0]*(exp(-k*dt_frac)*C-V[0]) -k*exp(-k*dt_frac)*C - temp1;
-				lb_x_[1] = -OSQP_INFTY;
-				break; 
-				}
-			case 7 : 
-				// Sigmoid between Safe Set and Lyapunov Level Set
-				{
-					ub_x_[0] = OSQP_INFTY; 
-				double C = 0.0; 
-				double Lfh_tau = (1-sigma(dt_frac))*temp2 
-								- sigma(dt_frac)*temp1 
-								+ (C - V[0] - h[0])*dsdt(dt_frac); 
-				double h_tau = (1-sigma(dt_frac))*h[0] + (C - V[0])*sigma(dt_frac); 
-				lb_x_[1] = -h_alpha[0]*h_tau - Lfh_tau; 
-				Fx_[2*nu_] = 0;
-				break;
-				} 
-			default: 
-				// Ugo's Original Constraints. Standard slackened Lyapunov + Barrier
-				ub_x_[0] = -V_alpha[0] *V[0]-temp1;	
-				lb_x_[1] = - h_alpha[0] *h[0]- temp2;
-				Fx_[2*nu_] = -1;
-		}
+		if (constraint_type==1){
+			ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
+			lb_x_[1] = -OSQP_INFTY; 
+			Fx_[2*nu_] = V[0];			
+		} else if(constraint_type ==2){
+			ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
+			lb_x_[1] = -OSQP_INFTY; 
+			Fx_[2*nu_] = 0;	
+		} else if(constraint_type == 3){
+			ub_x_[0] = OSQP_INFTY; 
+			lb_x_[1] = -OSQP_INFTY;
+			Fx_[2*nu_] = 0;
+		} else if (constraint_type == 4){ 
+			ub_x_[0] = OSQP_INFTY; 
+			double h_shrunk = h[0] - 0.999;
+			lb_x_[1] = - h_alpha[0]*2*h_shrunk/abs(h_shrunk)*pow(abs(h_shrunk), 1-rho) - temp2;
+			Fx_[2*nu_] = 0;
+		} else if (constraint_type == 5){
+			double C = 0.1;
+			ub_x_[0] = 20*(C-V[0])/abs(C - V[0])*pow(abs(C-V[0]), 1- rho) - temp1;
+			lb_x_[1] = -OSQP_INFTY;
+			Fx_[2*nu_] = 0;
+		} else if (constraint_type == 6){
+			double C = 0.01;
+			double k = 10; 
+			ub_x_[0] = h_alpha[0]*(exp(-k*dt_frac)*C-V[0]) -k*exp(-k*dt_frac)*C - temp1;
+			lb_x_[1] = -OSQP_INFTY;
+		} else if (constraint_type == 7) { 
+			ub_x_[0] = OSQP_INFTY; 
+			double C = 0.0; 
+			double Lfh_tau = (1-sigma(dt_frac))*temp2 
+							- sigma(dt_frac)*temp1 
+							+ (C - V[0] - h[0])*dsdt(dt_frac); 
+			double h_tau = (1-sigma(dt_frac))*h[0] + (C - V[0])*sigma(dt_frac); 
+			lb_x_[1] = -h_alpha[0]*2*h_tau - Lfh_tau; 
+			Fx_[2*nu_] = 0;
+		}else{
+			ub_x_[0] = -V_alpha[0] *V[0]-temp1;	
+			lb_x_[1] = - h_alpha[0] *h[0]- temp2;
+			Fx_[2*nu_] = -1;
+		} 	//V_alpha[0] *V[0] - temp1;//
+		// ub_x_[0] = -V_alpha[0] *V[0] - temp1;//		
+
 
 		if (V_alpha[0]>=10000.0){
 			ub_x_[0] = OSQP_INFTY; 
