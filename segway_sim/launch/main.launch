@@ -56,7 +56,7 @@
 					6: TD CBF (Exponential Lyapunov Decay)
 					7: TD CBF (Sigmoid between h and V)
 			-->
-			<param name="new_form" type="int" value="$(arg low_level_constraint)" />
+			<param name="constraint_type" type="int" value="$(arg low_level_constraint)" />
 		</node>
 
 		<node name="mpc" pkg="segway_sim" type="mpc_node" output="screen">
