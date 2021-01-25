@@ -37,11 +37,13 @@ namespace ControlBarrierFunction
 
 		~CBF();
 
-		void evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, double new_form);
+		void evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int new_form , double dt_frac);
 		void setIC(double X_in[], double Xn_in[], double X_MPC[]);
 		void setMatrices(double A_in[], double B_in[], double C_in[]);
 		int32_t setUpOSQP(int verbose);
-		void solveQP(int printLevel, double new_form);
+		void solveQP(int printLevel, int new_form);
+		double sigma(double dt_frac);
+		double dsdt(double dt_frac);
 
 		double *uCBF;
 		double gamma;
@@ -53,6 +55,7 @@ namespace ControlBarrierFunction
 
 		double h_alpha[1] = {0.1};
 		double V_alpha[1] = {10.0};
+		double rho = 0.5;
 
 		double uDes[2] = {0.0, 0.0};
 
@@ -255,7 +258,7 @@ namespace ControlBarrierFunction
 		return osqp_setup(&work_, data_, settings_);
 	}
 
-	void CBF::solveQP(int printLevel, double new_form)
+	void CBF::solveQP(int printLevel, int new_form)
 	{
 		// Update constraints
 		data_->l = lb_x_;
@@ -301,7 +304,17 @@ namespace ControlBarrierFunction
 		}
 	}
 
-	void CBF::evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, double new_form)
+
+	double k_tau = 20.0; 
+	double CBF::sigma(double dt_frac){
+		return 1.0/(1.0 + exp(-k_tau*(dt_frac +1.0/2.0))); 
+	}
+
+	double CBF::dsdt(double dt_frac){
+		return k_tau*exp(-k_tau*(dt_frac + 1.0/2.0))/pow(1.0 + exp(-k_tau*(dt_frac + 1.0/2.0)), 2) ; 
+	}
+
+	void CBF::evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int new_form, double dt_frac)
 	{
 		// evaluate dynamics
 		fullDynamics_(X,f,g);
@@ -368,51 +381,99 @@ namespace ControlBarrierFunction
 			temp1 = temp1 + Dv[i] * dxdt_augmsys_constaTerm[i];
 			temp2 = temp2 + Dh[i] * dxdt_augmsys_constaTerm[i];
 		}
-		if (V_alpha[0]<10000.0){
-			if (new_form>0){
-				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
-			}
-			else
-			{
-				ub_x_[0] = -V_alpha[0] *V[0]-temp1;	
-			} 	//V_alpha[0] *V[0] - temp1;//
-			// ub_x_[0] = -V_alpha[0] *V[0] - temp1;//		
-		}else{
-			ub_x_[0] = OSQP_INFTY; 			
-		}
-		ub_x_[1] = OSQP_INFTY;
-		lb_x_[0] = -OSQP_INFTY;
 
-		if (new_form>0){
-			// lb_x_[1] = - h_alpha[0] *h[0]- temp2; 
-			lb_x_[1] = -OSQP_INFTY; 
-		}
-		else
-		{
-			lb_x_[1] = - h_alpha[0] *h[0]- temp2;
-		}
-		// lb_x_[1] = -OSQP_INFTY; 
 
 		// write constraint matrix
         // self.A = csc_matrix(np.array([[np.dot(dvdx, dxdt_augmsys_linearTerm1), np.dot(dvdx, dxdt_augmsys_linearTerm2), -1],
         //                               [np.dot(dhdx, dxdt_augmsys_linearTerm1), np.dot(dhdx, dxdt_augmsys_linearTerm1),  0]]));
 		for (int i = 0; i < 2*nu_+2; i++)
-			Fx_[i] = 0;
+			Fx_[i] = 0.0;
 
 		for (int j=0; j<nu_; ++j){
 			for (int  i=0; i<nx_; i++) {
-				Fx_[2*j] += Dv[i] * dxdt_augmsys_linearTerm[i+j*nx_];
-				Fx_[2*j+1] += Dh[i] * dxdt_augmsys_linearTerm[i+j*nx_];
+				if (new_form ==6){
+					Fx_[2*j+1] += (Dh[i] * dxdt_augmsys_linearTerm[i+j*nx_])*(1 - sigma(dt_frac)) 
+									- (Dv[i] * dxdt_augmsys_linearTerm[i+j*nx_])*sigma(dt_frac);
+				}else{
+					Fx_[2*j] += Dv[i] * dxdt_augmsys_linearTerm[i+j*nx_];
+					Fx_[2*j+1] += Dh[i] * dxdt_augmsys_linearTerm[i+j*nx_];
+				}
 			}
 		}
-		//- h_alpha[0] *h[0]
-		if(new_form>0){
-			Fx_[2*nu_] = V[0];
-			// Fx_[2*nu_+1] = -h[0];
-		}else{
-			Fx_[2*nu_] = -1;
-			// Fx_[2*nu_+1] = 0;	
+
+		// Pick constraint in launch file with: low_level_constraint argument
+		lb_x_[0] = -OSQP_INFTY;
+		ub_x_[1] = OSQP_INFTY;
+		switch (new_form){
+			case 1 : 
+				// Kunal's Slackened Formulation
+				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
+				lb_x_[1] = -OSQP_INFTY; 
+				Fx_[2*nu_] = V[0];		
+				break; 
+			case 2 : 
+				// Kunal's Unslackened Formulation
+				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;
+				lb_x_[1] = -OSQP_INFTY; 
+				Fx_[2*nu_] = 0; 		
+				break; 
+			case 3 : 
+				// No Low Level Constraint
+				ub_x_[0] = OSQP_INFTY; 
+				lb_x_[1] = -OSQP_INFTY;
+				Fx_[2*nu_] = 0;
+				break; 			
+			case 4 : 
+				// Enforce Convergence to shrunken Safe Set
+				{
+				ub_x_[0] = OSQP_INFTY; 
+				double h_shrunk = h[0] - 0.999;
+				lb_x_[1] = - h_alpha[0]*2*h_shrunk/abs(h_shrunk)*pow(abs(h_shrunk), 1-rho) - temp2;
+				Fx_[2*nu_] = 0;
+				break; 
+				}
+			case 5 : 
+				// Enforce Convergence to Lyapunov Level Set
+				{
+				double C = 0.1;
+				ub_x_[0] = 20*(C-V[0])/abs(C - V[0])*pow(abs(C-V[0]), 1- rho) - temp1;
+				lb_x_[1] = -OSQP_INFTY;
+				Fx_[2*nu_] = 0;
+				break; 
+				}			
+			case 6 :
+				// Safe Exponential Decay to Lyapunov Level Set 
+				{
+				double C = 0.01;
+				double k = 10; 
+				ub_x_[0] = h_alpha[0]*(exp(-k*dt_frac)*C-V[0]) -k*exp(-k*dt_frac)*C - temp1;
+				lb_x_[1] = -OSQP_INFTY;
+				break; 
+				}
+			case 7 : 
+				// Sigmoid between Safe Set and Lyapunov Level Set
+				{
+					ub_x_[0] = OSQP_INFTY; 
+				double C = 0.0; 
+				double Lfh_tau = (1-sigma(dt_frac))*temp2 
+								- sigma(dt_frac)*temp1 
+								+ (C - V[0] - h[0])*dsdt(dt_frac); 
+				double h_tau = (1-sigma(dt_frac))*h[0] + (C - V[0])*sigma(dt_frac); 
+				lb_x_[1] = -h_alpha[0]*h_tau - Lfh_tau; 
+				Fx_[2*nu_] = 0;
+				break;
+				} 
+			default: 
+				// Ugo's Original Constraints. Standard slackened Lyapunov + Barrier
+				ub_x_[0] = -V_alpha[0] *V[0]-temp1;	
+				lb_x_[1] = - h_alpha[0] *h[0]- temp2;
+				Fx_[2*nu_] = -1;
 		}
+
+		if (V_alpha[0]>=10000.0){
+			ub_x_[0] = OSQP_INFTY; 
+		}
+
 		if (printLevel >= 1){
 			std::cout << "ub: " << ub_x_[0] << ", " << ub_x_[1] << std::endl;
 			std::cout << "lb: " << lb_x_[0] << ", " << lb_x_[1] << std::endl;
