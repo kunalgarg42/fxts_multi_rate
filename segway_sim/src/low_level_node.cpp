@@ -69,7 +69,7 @@ int h_counter = 0;
 double dt_mpc = 0.1;
 double dt_counter = 0;
 
-double new_form = 1;
+int constraint_type;
 
 double xPred[nx*(N_read+1)] = {}; 
 double uPred[nu*N_read] = {}; 
@@ -192,6 +192,7 @@ int main (int argc, char *argv[])
 
 	nhParams_->param<bool>("clf_active"     , clf_active, false);
 	nhParams_->param<bool>("tracking_active"  , tracking_active,false);
+	nhParams_->param<int>("constraint_type", constraint_type, 1);
 
 	if (delay_ms_ < 0.01){
 		delay_ms_ = 1;
@@ -222,7 +223,7 @@ int main (int argc, char *argv[])
 
 	double x_max[nx] = {max_x, max_y, max_theta, max_v, max_thetaDot, max_psi, max_psiDot};
 	c_float H_x[4] = {1000,1000,10,1};
-	// if(new_form>0){
+	// if(constraint_type>0){
 	// 	c_float H_x[4] = {1,1,10,1000};
 	// } 
 	// c_float H_x[4] = {1000,1000,1,100};
@@ -240,9 +241,9 @@ int main (int argc, char *argv[])
 	cbf->setIC(X, Xn, Xf);
 
 	cbf->setMatrices(Alinear, Blinear, Clinear);
-	cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, new_form);
+	cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, constraint_type, (dt_counter-dt_mpc)/dt_mpc);
 	cbf->setUpOSQP(0);
-	cbf->solveQP(10,0);
+	cbf->solveQP(10, constraint_type);
 
 	// Define parameters
 	const int printLevel = 0;
@@ -251,9 +252,9 @@ int main (int argc, char *argv[])
 	inputMpc_.inputVec[1] = 0.0;
 	
 	double Xn_next[nx] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
 	if (lowLevelActive_){
 		cout << "=========================== Low level is active " << endl;
+		cout << "=========================== Low level using constraint: " <<  constraint_type << endl;
 	} else {
 		cout << "=========================== Low level is NOT active " << endl;
 	}
@@ -302,7 +303,7 @@ int main (int argc, char *argv[])
 				Xtraj[i] = Xn[i];
 			}
 
-			// Integreate for delay
+			// Integrate for delay **************************** RYAN : Add $$\Delta t$$, Also accounts for package loss
 			for (int k = 0; k < (int) ((stateTrue_.time-optSol_.time)/dt_); k++ ){
 				// One step
 				for (int i = 0; i < nx; i++){
@@ -315,7 +316,8 @@ int main (int argc, char *argv[])
 							Xn_next[i] = Xn_next[i] + (Alinear[i*nx + j] * (Xtraj[j]-xeq[j]) )*dt_;
 						}
 					}
-					int index_mpc = (int) (k*dt_/dt_mpc);
+					// RYAN : extra time if you keep going passed MPC packet collection. If you overshoot 
+					int index_mpc = (int) (k*dt_/dt_mpc); // Overshoot, then you should integrate to the next input
 					Xn_next[i] = Xn_next[i] + (Blinear[i*nu + 0] * uPred[0+nu*index_mpc] + Blinear[i*nu + 1] * uPred[1+nu*index_mpc] + Clinear[i])*dt_;
 				}
 
@@ -342,7 +344,7 @@ int main (int argc, char *argv[])
 			double uTracking[2];
 			double BT = 0;
 			
-			// if (new_form>0){
+			// if (constraint_type>0){
 			cbf->setIC(X, Xtraj, Xf);	
 			// }
 			// else {
@@ -373,8 +375,9 @@ int main (int argc, char *argv[])
 			uMPC[0] = uPred[0];
 			uMPC[1] = uPred[1];
 
- 			cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, new_form);
- 			cbf->solveQP(1,new_form);
+ 			cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, constraint_type, (dt_counter-dt_mpc)/dt_mpc);
+			std::cout << "Controller Type: " << constraint_type << std::endl;
+ 			cbf->solveQP(1, constraint_type);
 
 			// ROS_INFO("h %f",cbf->h[0]);
 

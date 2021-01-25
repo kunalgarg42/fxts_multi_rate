@@ -37,11 +37,11 @@ namespace ControlBarrierFunction
 
 		~CBF();
 
-		void evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int new_form , double dt_frac);
+		void evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int constraint_type , double dt_frac);
 		void setIC(double X_in[], double Xn_in[], double X_MPC[]);
 		void setMatrices(double A_in[], double B_in[], double C_in[]);
 		int32_t setUpOSQP(int verbose);
-		void solveQP(int printLevel, int new_form);
+		void solveQP(int printLevel, int constraint_type);
 		double sigma(double dt_frac);
 		double dsdt(double dt_frac);
 
@@ -258,7 +258,7 @@ namespace ControlBarrierFunction
 		return osqp_setup(&work_, data_, settings_);
 	}
 
-	void CBF::solveQP(int printLevel, int new_form)
+	void CBF::solveQP(int printLevel, int constraint_type)
 	{
 		// Update constraints
 		data_->l = lb_x_;
@@ -273,7 +273,7 @@ namespace ControlBarrierFunction
 			// std::cout << axz;
 		}
 
-		// if (new_form>0){
+		// if (constraint_type>0){
 		// qv_[0] = -20*Hx_[0] * uDes[0];
 		// qv_[2] = 200*Hx_[2];
 		// }
@@ -314,7 +314,7 @@ namespace ControlBarrierFunction
 		return k_tau*exp(-k_tau*(dt_frac + 1.0/2.0))/pow(1.0 + exp(-k_tau*(dt_frac + 1.0/2.0)), 2) ; 
 	}
 
-	void CBF::evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int new_form, double dt_frac)
+	void CBF::evaluateCBFqpConstraintMatrices(double uMPC[], int printLevel, int constraint_type, double dt_frac)
 	{
 		// evaluate dynamics
 		fullDynamics_(X,f,g);
@@ -359,14 +359,14 @@ namespace ControlBarrierFunction
         memcpy(dxdt_augmsys_constaTerm+nx_,dxdt_plansys_constaTerm,sizeof(double)*nx_);
 		memcpy(dxdt_augmsys_linearTerm,dxdt_realsys_linearTerm,sizeof(double)*nx_*nu_);
         memcpy(dxdt_augmsys_linearTerm+(nx_*nu_),dxdt_plansys_linearTerm,sizeof(double)*nx_*nu_);
-        // double new_form = 0;
+        // double constraint_type = 0;
         // Barrier
         double Dh[2*nx_];
         double Dv[2*nx_];
         safetySet_(X, Xn, x_max_, h, Dh);
         clf_(X, Xf, V, Dv);
 
-     	// if(new_form>0){
+     	// if(constraint_type>0){
      	// }   
     	// }else{
     	// clf_(X, Xn, V, Dv);		
@@ -391,7 +391,7 @@ namespace ControlBarrierFunction
 
 		for (int j=0; j<nu_; ++j){
 			for (int  i=0; i<nx_; i++) {
-				if (new_form ==6){
+				if (constraint_type ==6){
 					Fx_[2*j+1] += (Dh[i] * dxdt_augmsys_linearTerm[i+j*nx_])*(1 - sigma(dt_frac)) 
 									- (Dv[i] * dxdt_augmsys_linearTerm[i+j*nx_])*sigma(dt_frac);
 				}else{
@@ -404,7 +404,7 @@ namespace ControlBarrierFunction
 		// Pick constraint in launch file with: low_level_constraint argument
 		lb_x_[0] = -OSQP_INFTY;
 		ub_x_[1] = OSQP_INFTY;
-		switch (new_form){
+		switch (constraint_type){
 			case 1 : 
 				// Kunal's Slackened Formulation
 				ub_x_[0] = -30*pow(V[0],0.8)-30*pow(V[0],1.2) - temp1;

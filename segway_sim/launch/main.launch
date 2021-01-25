@@ -3,7 +3,7 @@
 	<arg name="teleop" default="joy" />
 	<arg name="filter" default="on"/>
 	<arg name="viz" default="on"/>
-	<arg name="low_level_constraint" default="0.0"/>
+	<arg name="low_level_constraint" default="0"/>
 
 	<include file="$(find segway_sim)/launch/rviz.launch" if="$(eval viz == 'on')"/>
 
@@ -48,14 +48,15 @@
 			<param name="max_psiDot"   type="double" value="0.3"/>
 			<!-- Low Level Constraint Types: 
 					0: Ugp's original
-					1: Kunal's FxT Lyapunov
-					2: No Filter
-					3: FT Barrier (Using Barrier Function)
-					4: FT Barrier (using Lyapunov Function)
-					5: TD CBF (Exponential Lyapunov Decay)
-					6: TD CBF (Sigmoid between h and V)
+					1: Kunal's FxT Lyapunov with slack gain 
+					2: Kunal's FxT Lyapunov without slack gain
+					3: No Filter
+					4: FT Barrier (Using Barrier Function)
+					5: FT Barrier (using Lyapunov Function)
+					6: TD CBF (Exponential Lyapunov Decay)
+					7: TD CBF (Sigmoid between h and V)
 			-->
-			<param name="new_form" type="double" value="$(arg low_level_constraint)" />
+			<param name="new_form" type="int" value="$(arg low_level_constraint)" />
 		</node>
 
 		<node name="mpc" pkg="segway_sim" type="mpc_node" output="screen">
