@@ -243,7 +243,7 @@ int main (int argc, char *argv[])
 	cbf->setMatrices(Alinear, Blinear, Clinear);
 	cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, constraint_type, (dt_counter-dt_mpc)/dt_mpc);
 	cbf->setUpOSQP(0);
-	cbf->solveQP(10, constraint_type);
+	cbf->solveQP(10);
 
 	// Define parameters
 	const int printLevel = 0;
@@ -376,8 +376,7 @@ int main (int argc, char *argv[])
 			uMPC[1] = uPred[1];
 
  			cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, constraint_type, (dt_counter-dt_mpc)/dt_mpc);
-			std::cout << "Controller Type: " << constraint_type << std::endl;
- 			cbf->solveQP(1, constraint_type);
+ 			cbf->solveQP(1);
 
 			// ROS_INFO("h %f",cbf->h[0]);
 
@@ -454,7 +453,6 @@ int main (int argc, char *argv[])
 				lowLevelLog_.uMPC[i] = uMPC[i];
 				lowLevelLog_.uTot[i] = inputTot_.inputVec[i];
 			}
-			std::cout << "V " << cbf->V[0] << std::endl;
 			lowLevelLog_.V = cbf->V[0];
 			lowLevelLog_.h = cbf->h[0];
 			lowLevelLog_.flagQP = cbf->flagQP;
