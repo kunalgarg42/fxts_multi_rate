@@ -16,7 +16,7 @@ double c2 = 0.166845864363019;
 double A2 = 3.604960049044268;
 double B2 = 3.836289730154863;
 double C2 = 1.069672194414735;
-double K  = 1.261650363363571;
+double K  = 2*1.261650363363571;
 double r  = 0.195;
 double L  = 0.5;
 double gGravity = 9.81;
@@ -28,7 +28,7 @@ double FricCoeff = 1.225479467549329;
 // double x_max_[nx_] = {0.02,0.02,0.1,0.1,0.1,0.1,0.1};
 
 double x_eq_[nx_] = {0,0,0,0,0,.138324423615,0};
-double x_cost_[nx_] = {10,10,10,10,10,10,10};
+double x_cost_[nx_] = {10,10,10,10,1000,1000,10};
 
 std::string prefix_path = "/home/kunal/catkin_ws/src/";
 
@@ -235,7 +235,7 @@ void safetySet(const double X[], const double Xn[], const double *x_max_, double
     Dh[12] = (2*psi - 2*psin)/pow(x_max_[5],2);
     Dh[13] = (2*psiDot - 2*psiDotn)/pow(x_max_[6],2);
 }
-void clf(const double X[], const double Xn[], double *V, double *Dv)
+void clf(const double X[], const double Xn[], double *V, double *Dv, double new_form)
 {
 	double x        = X[0]; 
 	double y        = X[1]; 
@@ -253,7 +253,12 @@ void clf(const double X[], const double Xn[], double *V, double *Dv)
 	double psin      = Xn[5]; 
 	double psiDotn   = Xn[6]; 
 	double constant = 1;
-
+	if (new_form>0)
+	{
+		x_cost_[4] = 10;
+		x_cost_[5] = 10;
+	}
+	
     V[0] =  x_cost_[0]*pow((x - xn),2) + x_cost_[1]*pow((y - yn),2) + x_cost_[2]*pow((theta - thetan),2) 
 		+ x_cost_[3]*pow((v - vn),2) + x_cost_[4]*pow((thetaDot - thetaDotn),2) 
 		+ x_cost_[5]*pow((psi - psin),2) + x_cost_[6]*pow((psiDot - psiDotn),2) ;
@@ -266,20 +271,21 @@ void clf(const double X[], const double Xn[], double *V, double *Dv)
     Dv[3] = constant*x_cost_[3]*(2*v - 2*vn),
 	Dv[4] = constant*x_cost_[4]*(2*thetaDot - 2*thetaDotn),
     Dv[5] = constant*x_cost_[5]*(2*psi - 2*psin),
-    Dv[6] = constant*x_cost_[6]*(2*psiDot - 2*psiDotn);
-
-    for(int i = 7; i<14; i++){
-    Dv[i] = 0.0;
-	}
-
-    /*
+    Dv[6] = constant*x_cost_[6]*(2*psiDot - 2*psiDotn);    
     Dv[7] = -x_cost_[0]*(2*x - 2*xn),
     Dv[8] = -x_cost_[1]*(2*y - 2*yn),
    	Dv[9] = -x_cost_[2]*(2*theta - 2*thetan),
     Dv[10] = -x_cost_[3]*(2*v - 2*vn),
 	Dv[11] = -x_cost_[4]*(2*thetaDot - 2*thetaDotn),
     Dv[12] = -x_cost_[5]*(2*psi - 2*psin),
-    Dv[13] = -x_cost_[6]*(2*psiDot - 2*psiDotn);*/
+    Dv[13] = -x_cost_[6]*(2*psiDot - 2*psiDotn);
+
+    if(new_form>0)
+    { 
+       for(int i = 7; i<14; i++){
+    Dv[i] = 0.0;
+	}
+	}
 }
 
 #endif

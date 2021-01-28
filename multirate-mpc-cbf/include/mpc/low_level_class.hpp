@@ -33,7 +33,8 @@ namespace ControlBarrierFunction
 			std::function<void(const double* /*x*/,
 							   const double* /*x_eq*/,
 						       double* /*A*/,
-						       double* /*B*/)> clf);
+						       double* /*B*/,
+							   double)> clf);
 
 		~CBF();
 
@@ -85,7 +86,8 @@ namespace ControlBarrierFunction
 		std::function<void(const double* /*x*/,
 						   const double* /*x*/,
 	                             double* /*f*/,
-								 double* /*g*/)> clf_;		
+								 double* /*g*/,
+								 double)> clf_;		
 
 		// QP Constraint Matrices (the structure is fixed upper triangular)
 		int nv_ = (int) nu_+2;
@@ -124,7 +126,8 @@ namespace ControlBarrierFunction
 		std::function<void(const double* /*x*/,
 						   const double* /*x_eq*/,
 					       double* /*A*/,
-					       double* /*B*/)> clf):
+					       double* /*B*/,
+						   double)> clf):
 	nx_(nx), nu_(nu), lowLevelActive_(lowLevelActive), Hx_(Hx), x_eq_(x_eq), x_max_(x_max), fullDynamics_(fullDynamics), safetySet_(safetySet), clf_(clf)
 	{
 		Fx_ = new c_float[2*nu_+2]{};
@@ -351,7 +354,7 @@ namespace ControlBarrierFunction
         double Dh[2*nx_];
         double Dv[2*nx_];
         safetySet_(X, Xn, x_max_, h, Dh);
-        clf_(X, Xf, V, Dv);
+        clf_(X, Xf, V, Dv,new_form);
 
      	// if(new_form>0){
      	// }   
@@ -384,14 +387,14 @@ namespace ControlBarrierFunction
 		lb_x_[0] = -OSQP_INFTY;
 
 		if (new_form>0){
-			// lb_x_[1] = - h_alpha[0] *h[0]- temp2; 
-			lb_x_[1] = -OSQP_INFTY; 
+			lb_x_[1] = - h_alpha[0] *h[0]- temp2; 
+			// lb_x_[1] = -OSQP_INFTY; 
 		}
 		else
 		{
 			lb_x_[1] = - h_alpha[0] *h[0]- temp2;
 		}
-		// lb_x_[1] = -OSQP_INFTY; 
+		lb_x_[1] = -OSQP_INFTY; 
 
 		// write constraint matrix
         // self.A = csc_matrix(np.array([[np.dot(dvdx, dxdt_augmsys_linearTerm1), np.dot(dvdx, dxdt_augmsys_linearTerm2), -1],
@@ -407,11 +410,11 @@ namespace ControlBarrierFunction
 		}
 		//- h_alpha[0] *h[0]
 		if(new_form>0){
-			Fx_[2*nu_] = V[0];
+			Fx_[2*nu_] = -V[0];
 			// Fx_[2*nu_+1] = -h[0];
 		}else{
 			Fx_[2*nu_] = -1;
-			// Fx_[2*nu_+1] = 0;	
+			// Fx_[2*nu_+1] = -h[0];	
 		}
 		if (printLevel >= 1){
 			std::cout << "ub: " << ub_x_[0] << ", " << ub_x_[1] << std::endl;

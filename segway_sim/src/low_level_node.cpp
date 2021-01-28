@@ -237,8 +237,8 @@ int main (int argc, char *argv[])
 	// 		Xf[i] = optSol_.optimalSolution[nx+i];
 	// 		}
 
-	cbf->setIC(X, Xn, Xf);
-
+	// cbf->setIC(X, Xn, Xf);
+	cbf->setIC(X, Xf, Xf);
 	cbf->setMatrices(Alinear, Blinear, Clinear);
 	cbf->evaluateCBFqpConstraintMatrices(uMPC, 0, new_form);
 	cbf->setUpOSQP(0);
@@ -342,12 +342,12 @@ int main (int argc, char *argv[])
 			double uTracking[2];
 			double BT = 0;
 			
-			// if (new_form>0){
+			if (new_form>0){
 			cbf->setIC(X, Xtraj, Xf);	
-			// }
-			// else {
-			// cbf->setIC(X, Xtraj, Xtraj);
-			// }
+			}
+			else {
+			cbf->setIC(X, Xtraj, Xtraj);
+			}
 			cbf->setMatrices(Alinear, Blinear, Clinear);
 
 			if (tracking_active){
