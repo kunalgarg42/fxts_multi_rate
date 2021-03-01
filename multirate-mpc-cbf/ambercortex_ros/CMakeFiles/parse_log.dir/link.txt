@@ -1,1 +1,0 @@
-/usr/bin/c++    -rdynamic CMakeFiles/parse_log.dir/src/parse_log.cpp.o  -o ../devel/lib/ambercortex_ros/parse_log 

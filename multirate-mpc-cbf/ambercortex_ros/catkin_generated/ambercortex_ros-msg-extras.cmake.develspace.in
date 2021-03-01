@@ -1,2 +1,0 @@
-set(ambercortex_ros_MESSAGE_FILES "/home/kunal/catkin_ws/src/ambercortex_ros/msg/cmd.msg;/home/kunal/catkin_ws/src/ambercortex_ros/msg/state.msg;/home/kunal/catkin_ws/src/ambercortex_ros/msg/sensor.msg;/home/kunal/catkin_ws/src/ambercortex_ros/msg/input.msg;/home/kunal/catkin_ws/src/ambercortex_ros/msg/ctrl_info.msg")
-set(ambercortex_ros_SERVICE_FILES "/home/kunal/catkin_ws/src/ambercortex_ros/srv/logging.srv")
