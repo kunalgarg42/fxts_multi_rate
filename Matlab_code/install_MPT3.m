@@ -1,5 +1,4 @@
 %% installation of tbxmanager with all submodels required for MPT
-%
 clc;
 disp('----------------------------------------------');
 disp('Installation of MPT using the Toolbox manager.');
