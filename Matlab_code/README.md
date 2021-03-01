@@ -2,8 +2,8 @@ Matlab code for the Segway simulations utilizing fixed-time barrier functions in
 
 Prerequisites: 
 1) MPT toolbox (use install_MPT3.m and run the following commands in Matlab
-tbxmanager update 
-clear classes
+tbxmanager update\\
+clear classes\\
 mpt_init 
 
 (see https://www.mpt3.org/Main/Installation for more details)
