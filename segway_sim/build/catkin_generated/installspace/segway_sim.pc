@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: segway_sim
-Description: Description of segway_sim
-Version: 0.1.0
-Cflags: -I${prefix}/include
-Libs: -L${prefix}/lib -lsegway_sim
-Requires: roscpp message_generation std_msgs sensor_msgs geometry_msgs visualization_msgs nav_msgs tf pcl_conversions pcl_ros ambercortex_ros
