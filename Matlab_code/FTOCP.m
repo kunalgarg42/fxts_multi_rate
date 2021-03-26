@@ -5,7 +5,7 @@ n = size(Alin, 2);
 m = size(Blin, 2);
 x = sdpvar(n, N+1);
 u = sdpvar(m, N);
-
+K = 0*K;
 Fx = X.A; bx = X.b;
 Fu = U.A; bu = U.b;
 
