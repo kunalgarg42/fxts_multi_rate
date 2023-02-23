@@ -12,4 +12,4 @@ mpt_init <br />
 3) MOSEK (use command "addpath  <MSKHOME>\mosek\8\toolbox\<MATLAB VERSION> or see https://docs.mosek.com/9.2/toolbox/install-interface.html)
 
 
-[1]: Garg, K., Cosner, R. K., Rosoliya, U., Ames, A. D., and Panagou, D., "Multi-rate control design under input constraints using fixed-time barrier functions", submitted to IEEE Control Systems Letters, under review. (available at http://www-personal.umich.edu/~kgarg/uploads/papers/LCSS_21_multirate.pdf)
+[1]: Garg, Kunal, et al. "Multi-rate control design under input constraints via fixed-time barrier functions." IEEE Control Systems Letters 6 (2021): 608-613. (available at https://kunalgarg.mit.edu/sites/default/files/documents/LCSS_21_multirate.pdf)
